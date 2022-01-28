@@ -10,7 +10,7 @@ import java.util.List;
 public class UserDaoService {
 
     private static List<User> users = new ArrayList<>();
-    private static Integer usersCount = 3;
+    private Integer usersCount = 3;
 
     static {
         users.add(new User(1, "Joao", new Date()));
@@ -39,5 +39,9 @@ public class UserDaoService {
         }
 
         return null;
+    }
+
+    public void deleteUser(Integer id) {
+        users.removeIf(u -> u.getId().equals(id));
     }
 }

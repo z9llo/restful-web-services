@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.web.util.UriBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -12,8 +11,12 @@ import java.util.List;
 @RestController
 public class UserResource {
 
+    private final UserDaoService service;
+
     @Autowired
-    private UserDaoService service;
+    public UserResource (UserDaoService service) {
+        this.service = service;
+    }
 
     @GetMapping(path = "/users")
     public List<User> retrieveAllUsers() {
@@ -22,7 +25,12 @@ public class UserResource {
 
     @GetMapping(path = "/users/{id}")
     public User retrieveUser(@PathVariable Integer id) {
-        return service.findOne(id);
+        User user = service.findOne(id);
+        if (user == null) {
+            throw new UserNotFoundException(String.format("Usuario nao encontrado id: %d", id));
+        }
+
+        return user;
     }
 
     @PostMapping(path = "/users")
@@ -34,5 +42,10 @@ public class UserResource {
                         .buildAndExpand(savedUser.getId()).toUri();
 
         return ResponseEntity.created(location).build();
+    }
+
+    @DeleteMapping(path = "/users/{id}")
+    public void deleteUser(@PathVariable Integer id) {
+        service.deleteUser(id);
     }
 }
