@@ -1,8 +1,11 @@
 package com.zllo.rest.webservices.restfulwebservices.exception;
 
 import com.zllo.rest.webservices.restfulwebservices.user.UserNotFoundException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,4 +30,14 @@ public class CustomResponseEntityHandler extends ResponseEntityExceptionHandler 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        StringBuilder detail = new StringBuilder();
+        for (ObjectError o: ex.getBindingResult().getAllErrors()) {
+            detail.append(o.getDefaultMessage()).append(";");
+        }
+
+        ExceptionResponse response = new ExceptionResponse(new Date(), "Validation failed", detail.toString());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
