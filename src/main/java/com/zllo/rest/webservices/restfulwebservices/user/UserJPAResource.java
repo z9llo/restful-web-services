@@ -3,8 +3,6 @@ package com.zllo.rest.webservices.restfulwebservices.user;
 import com.zllo.rest.webservices.restfulwebservices.exception.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
-
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,39 +11,39 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-public class UserResource {
+@RequestMapping("jpa/users")
+public class UserJPAResource {
 
-    private final UserDaoService service;
+    private final UserRepository service;
 
     @Autowired
-    public UserResource (UserDaoService service) {
+    public UserJPAResource(UserRepository service) {
         this.service = service;
     }
 
-    @GetMapping(path = "/users")
+    @GetMapping
     public List<User> retrieveAllUsers() {
-        return service.findAll();
+        return this.service.findAll();
     }
 
-    @GetMapping(path = "/users/{id}")
+    @GetMapping(path = "/{id}")
     public EntityModel<User> retrieveUser(@PathVariable Integer id) {
-        User user = service.findOne(id);
-        if (user == null) {
-            throw new EntityNotFoundException(String.format("Usuario nao encontrado id: %d", id));
-        }
-
-        EntityModel<User> model = EntityModel.of(user);
+        EntityModel<User> model = EntityModel.of(getUser(id));
         WebMvcLinkBuilder linkToUsers = linkTo(methodOn(this.getClass()).retrieveAllUsers());
         model.add(linkToUsers.withRel("all-users"));
 
         return model;
     }
 
-    @PostMapping(path = "/users")
+    @PostMapping
     public ResponseEntity<User> saveUser(@Valid @RequestBody User user) {
-        User savedUser = service.save(user);
+        User savedUser = this.service.save(user);
 
         URI location = ServletUriComponentsBuilder
                         .fromCurrentRequest().path("/{id}")
@@ -54,8 +52,17 @@ public class UserResource {
         return ResponseEntity.created(location).build();
     }
 
-    @DeleteMapping(path = "/users/{id}")
+    @DeleteMapping(path = "/{id}")
     public void deleteUser(@PathVariable Integer id) {
-        service.deleteUser(id);
+        this.service.deleteById(id);
+    }
+
+    private User getUser(Integer id) throws EntityNotFoundException {
+        Optional<User> user = this.service.findById(id);
+        if (user.isEmpty()) {
+            throw new EntityNotFoundException(String.format("Usuario nao encontrado id: %d", id));
+        }
+
+        return user.get();
     }
 }
